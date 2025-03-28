@@ -25,11 +25,22 @@ class ProductModel {
     }
   }
 
+  static async getUserProducts() {
+    try {
+      const [results] = await db.query(
+        'SELECT * FROM products'
+      );
+      return results;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async updateProduct(productId, sellerId, updates) {
     try {
       const [results] = await db.query(
-        'UPDATE products SET ? WHERE id = ? AND seller_id = ?',
-        [updates, productId, sellerId]
+        'UPDATE products SET name = ?, price = ?, stock = ?, currency = ?, image = ? WHERE id = ? AND seller_id = ?',
+        [updates.name, updates.price, updates.stock, updates.currency, updates.image, productId, sellerId]
       );
       return results.affectedRows > 0;
     } catch (error) {

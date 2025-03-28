@@ -7,7 +7,10 @@ const ProductController = require('../Controller/ProductController');
 // Routes with authentication and file upload middleware
 router.post('/addproducts', verifyToken, upload.single('image'), ProductController.addProduct);
 router.get('/getproducts', verifyToken, ProductController.getProducts);
-router.put('/update/:id', verifyToken, ProductController.updateProduct);
+router.put('/updateproducts', verifyToken, upload.single('image'), ProductController.updateProduct);
 router.delete('/delete/:id', verifyToken, ProductController.deleteProduct);
+
+// Public route to get all products
+router.get('/getuserproducts', ProductController.getuserProducts);
 
 module.exports = router;

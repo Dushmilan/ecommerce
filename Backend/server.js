@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 // Static files
 app.use('/public', express.static('public'));
 
-// Create uploads directory if it doesn't exist
+// Create uploads directory 
 const fs = require('fs');
 const path = require('path');
 const uploadDir = path.join(__dirname, 'public', 'images');

@@ -2,7 +2,12 @@ const db = require('../Database/Sql/Connection');
 
 
 class UserModel {
-  static async createUser(name, email, password) {
+
+
+
+
+  
+    static async createUser(name, email, hashedPassword) {
     try {
       // Check if user already exists
       const [existingUsers] = await db.query(
@@ -16,7 +21,7 @@ class UserModel {
       // Create user 
       const [result] = await db.query(
         'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-        [name, email, password] 
+        [name, email, hashedPassword] 
       );
 
       return result[0];
@@ -48,16 +53,24 @@ class UserModel {
   }
   
 
+
+
+
+
+
+
+
+
   static async findUserByEmail(email) {
     try {
       // First try to find user in users table
       const [users] = await db.query(
-        'SELECT id, username, email, password FROM users WHERE email = ?',
+        'SELECT id, username, email, password FROM users WHERE LOWER(email) = ?',
         [email]
       );
   
       if (users.length > 0) {
-        console.log('Found user:', users[0]);
+        
         return {
           id: users[0].id,
           username: users[0].username,
@@ -69,7 +82,7 @@ class UserModel {
   
       // Try sellers table
       const [sellers] = await db.query(
-        'SELECT seller_id, username, email, password, shopname FROM sellers WHERE email = ?',
+        'SELECT seller_id, username, email, password, shopname FROM sellers WHERE LOWER(email) = ?',
         [email]
       );
   
@@ -78,7 +91,6 @@ class UserModel {
       }
   
       const seller = sellers[0];
-      console.log('Found seller:', seller);
       return {
         id: seller.seller_id, 
         username: seller.username,
