@@ -1,13 +1,15 @@
 const ProductModel = require('../Model/ProductModel');
+const path = require('path');
+const fs = require('fs');
 
 // Add a new product
 exports.addProduct = async (req, res) => {
   try {
-    const { name, price, stock, currency } = req.body;
+    const { name, price, stock, currency, category } = req.body;
     const image = req.file ? `${process.env.IMAGE_URL}/${req.file.filename}` : '';
 
     // Get seller ID from JWT token
-    const sellerId = req.user.id; 
+    const sellerId = req.user.userId;
     
     if (!sellerId) {
       return res.status(400).json({ message: 'Seller ID is required' });
@@ -17,7 +19,7 @@ exports.addProduct = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const productId = await ProductModel.addProduct(name, price, stock, currency, image, sellerId);
+    const productId = await ProductModel.addProduct(name, price, stock, currency, image, category, sellerId);
     res.status(201).json({ 
       message: 'Product added successfully', 
       productId,
@@ -36,7 +38,7 @@ exports.addProduct = async (req, res) => {
 // Get all products
 exports.getProducts = async (req, res) => {
   try {
-    const sellerId = req.user.id;
+    const sellerId = req.user.userId;
     
     if (!sellerId) {
       return res.status(400).json({ message: 'Seller ID is required' });
@@ -56,12 +58,18 @@ exports.getProducts = async (req, res) => {
 // Update a product
 exports.updateProduct = async (req, res) => {
   try {
-    // Get the seller ID from the token
-    const sellerId = req.user.id;
+    const sellerId = req.user.userId;
     const productId = req.body.id;
     
-    if (!productId) {
-      return res.status(400).json({ message: 'Product ID is required' });
+     if (!productId) {
+      return res.status(400).json({ message: 'Product ID is required', success: false });
+    }
+
+    // Get the existing product to check ownership and previous image
+    const [existingProduct] = await ProductModel.getProducts(productId, sellerId);
+
+    if (!existingProduct) {
+      return res.status(404).json({ message: 'Product not found or unauthorized', success: false });
     }
 
     // Create updates object from request body
@@ -69,12 +77,23 @@ exports.updateProduct = async (req, res) => {
       name: req.body.name,
       price: req.body.price ? Number(req.body.price) : null,
       stock: req.body.stock ? Number(req.body.stock) : null,
-      currency: req.body.currency
+      category: req.body.category
     };
 
     // Handle image upload if present
     if (req.file) {
       updates.image = `${process.env.IMAGE_URL}/${req.file.filename}`;
+      
+      // Delete previous image if it exists
+      if (existingProduct.image) {
+        const prevImageName = existingProduct.image.split('/').pop();
+        const prevImagePath = path.join(__dirname, `../../uploads/${prevImageName}`);
+        try {
+          fs.unlinkSync(prevImagePath);
+        } catch (err) {
+          console.error('Error deleting previous image file:', err);
+        }
+      }
     }
 
     // Remove undefined fields to avoid overwriting with null values
@@ -82,26 +101,57 @@ exports.updateProduct = async (req, res) => {
 
     const updated = await ProductModel.updateProduct(productId, sellerId, updates);
     if (!updated) {
-      return res.status(404).json({ message: 'Product not found or unauthorized' });
+      return res.status(404).json({ message: 'Product not found or unauthorized', success: false });
     }
 
-    res.json({ message: 'Product updated successfully', product: updates });
+    res.json({ 
+      message: 'Product updated successfully',
+      success: true
+    });
   } catch (error) {
     console.error('Error updating product:', error);
-    res.status(500).json({ message: 'Error updating product', error: error.message });
+    res.status(500).json({ 
+      message: 'Error updating product',
+      error: error.message,
+      success: false
+    });
   }
 };
 
 // Delete a product
 exports.deleteProduct = async (req, res) => {
   try {
-    const product = await ProductModel.deleteProduct(req.body.id, req.user.id);
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+    const id = req.body.id;
+    const sellerId = req.user.userId;
+    
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Product ID is required',
+        error: 'Product ID is required in the request body'
+      });
     }
-    res.json({ message: 'Product deleted successfully' });
+
+    const product = await ProductModel.deleteProduct(id, sellerId);
+    if (!product) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Product not found',
+        error: 'Product not found or you do not have permission to delete it'
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Product deleted successfully'
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting product', error: error.message });
+    console.error('Error deleting product:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error deleting product',
+      error: error.message
+    });
   }
 };
 

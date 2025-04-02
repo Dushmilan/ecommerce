@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const UserRouter = require('./Router/UserRouter');
 const ProductRouter = require('./Router/ProductRouter');
+const OrderRouter = require('./Router/OrderRouter');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +27,7 @@ if (!fs.existsSync(uploadDir)) {
 // Routes
 app.use('/api', UserRouter);
 app.use('/api', ProductRouter);
+app.use('/api/orders', OrderRouter);
 
 // Test route
 app.get('/', (req, res) => {

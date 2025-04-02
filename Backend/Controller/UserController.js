@@ -109,26 +109,17 @@ static async LoginController(req, res) {
     }
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password,);
-
-    console.log('Password validation result:', isPasswordValid);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid password' });
     }
-
-    // Construct payload explicitly
-    const payload = {
-      userId: user.id,
-      email: user.email,
-      shopName: user.shopName
-    };
-    console.log('Token Payload:', payload);
-
+    // construct Token
     const token = jwt.sign(
-      payload,
+      { id: user.id, role: user.role },
       process.env.JWT_SECRET || 'defaultSecret',
       { expiresIn: '24h' }
     );
-      if (user.role === 'user') {
+    // send response
+    if (user.role === 'user') {
     res.json({
       message: 'Login successful',
       token,

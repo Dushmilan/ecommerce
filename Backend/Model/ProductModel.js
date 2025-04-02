@@ -1,11 +1,11 @@
 const db = require('../Database/Sql/Connection');
 
 class ProductModel {
-  static async addProduct(name, price, stock, currency, image, sellerId) {
+  static async addProduct(name, price, stock, currency, image, category, sellerId) {
     try {
-      const [results] = await db.query(
-        'INSERT INTO products (name, price, stock, currency, image, seller_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [name, price, stock, currency, image, sellerId]
+        const [results] = await db.query(
+          'INSERT INTO products (name, price, stock, currency, image, category, seller_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [name, price, stock, currency, image, category, sellerId]
       );
       return results.insertId;
     } catch (error) {
@@ -38,24 +38,71 @@ class ProductModel {
 
   static async updateProduct(productId, sellerId, updates) {
     try {
-      const [results] = await db.query(
-        'UPDATE products SET name = ?, price = ?, stock = ?, currency = ?, image = ? WHERE id = ? AND seller_id = ?',
-        [updates.name, updates.price, updates.stock, updates.currency, updates.image, productId, sellerId]
+      // Get the existing product to check ownership
+      const [existingProduct] = await db.query(
+        'SELECT * FROM products WHERE id = ? AND seller_id = ?',
+        [productId, sellerId]
       );
+
+      if (!existingProduct[0]) {
+        return false;
+      }
+
+      // Prepare the update query and values
+      const updateFields = [];
+      const values = [];
+
+      // Only update fields that are provided
+      if (updates.name) {
+        updateFields.push('name = ?');
+        values.push(updates.name);
+      }
+      if (updates.price) {
+        updateFields.push('price = ?');
+        values.push(updates.price);
+      }
+      if (updates.stock) {
+        updateFields.push('stock = ?');
+        values.push(updates.stock);
+      }
+      if (updates.category) {
+        updateFields.push('category = ?');
+        values.push(updates.category);
+      }
+      if (updates.image) {
+        updateFields.push('image = ?');
+        values.push(updates.image);
+        
+      }
+
+      // Add the ID and seller ID to the values array
+      values.push(productId, sellerId);
+
+      // Construct the update query
+      const updateQuery = `UPDATE products SET ${updateFields.join(', ')} WHERE id = ? AND seller_id = ?`;
+
+      const [results] = await db.query(updateQuery, values);
       return results.affectedRows > 0;
     } catch (error) {
+      console.error('Error updating product:', error);
       throw error;
     }
   }
 
-  static async deleteProduct(productId, sellerId) {
+  static async deleteProduct(id, sellerId) {
     try {
       const [results] = await db.query(
-        'DELETE FROM products WHERE id = ? AND seller_id   = ?',
-        [productId, sellerId]
+        'DELETE FROM products WHERE id = ? AND seller_id = ?',
+        [id, sellerId]
       );
-      return results.affectedRows > 0;
+
+      if (results.affectedRows === 0) {
+        return null; // Product not found or not owned by seller
+      }
+
+      return true;
     } catch (error) {
+      console.error('Error deleting product:', error);
       throw error;
     }
   }

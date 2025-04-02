@@ -6,7 +6,14 @@ const storage = multer.diskStorage({
     cb(null, 'public/images');
   },
   filename: (req, file, cb) => {
-    cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
+    // Get the timestamp and clean the original filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const cleanFilename = file.originalname
+      .replace(/[^a-zA-Z0-9.]/g, '-') // Replace special characters with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with a single one
+      .trim('-'); // Remove leading/trailing hyphens
+
+    cb(null, `${timestamp}-${cleanFilename}`);
   }
 });
 
