@@ -27,7 +27,7 @@ const createOrder = async (req, res) => {
     }
 
     // Create order
-    const order = await Order.createOrder(
+    const orderId = await Order.createOrder(
       req.user.id,
       shippingAddress,
       paymentMethod,
@@ -38,7 +38,7 @@ const createOrder = async (req, res) => {
       totalPrice
     );
 
-    res.status(201).json(order);
+    res.status(201).json({ orderId });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -67,31 +67,24 @@ const getUserOrders = async (req, res) => {
   }
 };
 
-// Update order status
-const updateOrderStatus = async (req, res) => {
+
+
+// Get sellers orders
+const getSellersOrders = async (req, res) => {
   try {
-    const { isPaid, paidAt, isDelivered, deliveredAt } = req.body;
-    const updated = await Order.updateOrderStatus(
-      req.params.id,
-      isPaid,
-      paidAt,
-      isDelivered,
-      deliveredAt
-    );
-
-    if (!updated) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-
-    res.json({ message: 'Order status updated' });
+    const orders = await Order.getSellersOrders(req.user.id);
+    console.log(req.user.id);
+    res.json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+
+
 module.exports = {
   createOrder,
   getOrder,
   getUserOrders,
-  updateOrderStatus
+  getSellersOrders
 };

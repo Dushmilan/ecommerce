@@ -4,6 +4,7 @@ require('dotenv').config();
 const UserRouter = require('./Router/UserRouter');
 const ProductRouter = require('./Router/ProductRouter');
 const OrderRouter = require('./Router/OrderRouter');
+const AdminRouter = require('./Router/AdminRouter');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,6 +29,7 @@ if (!fs.existsSync(uploadDir)) {
 app.use('/api', UserRouter);
 app.use('/api', ProductRouter);
 app.use('/api/orders', OrderRouter);
+app.use('/api/admin', AdminRouter);
 
 // Test route
 app.get('/', (req, res) => {

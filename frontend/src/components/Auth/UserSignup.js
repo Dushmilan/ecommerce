@@ -37,7 +37,7 @@ const UserSignup = () => {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.status === 201) {
         setSuccess('Account created successfully! Please login.');
         setError('');
         setTimeout(() => {

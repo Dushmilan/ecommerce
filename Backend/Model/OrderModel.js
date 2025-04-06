@@ -10,7 +10,7 @@ class OrderModel {
       try {
         // Create order
         const [orderResult] = await connection.query(
-          'INSERT INTO orders (user_id, shipping_address, payment_method, items_price, shipping_price, tax_price, total_price, is_paid, is_delivered) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)',
+          'INSERT INTO orders (user_id, shipping_address, payment_method, items_price, shipping_price, tax_price, total_price) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [userId, JSON.stringify(shippingAddress), paymentMethod, itemsPrice, shippingPrice, taxPrice, totalPrice]
         );
 
@@ -23,37 +23,20 @@ class OrderModel {
           item.name,
           item.quantity,
           item.price,
-          item.image
         ]);
 
         await connection.query(
-          'INSERT INTO order_items (order_id, product_id, name, quantity, price, image) VALUES ?',
+          'INSERT INTO order_items (order_id, product_id, name, quantity, price) VALUES ?',
           [orderItemsData]
         );
 
-        // Update user's order history
-        await connection.query(
-          'INSERT INTO user_orders (user_id, order_id) VALUES (?, ?)',
-          [userId, orderId]
-        );
-
         await connection.commit();
-
-        // Get the complete order with items
-        const [order] = await connection.query(
-          'SELECT o.*, oi.* FROM orders o ' +
-          'LEFT JOIN order_items oi ON o.id = oi.order_id ' +
-          'WHERE o.id = ?',
-          [orderId]
-        );
-
-        connection.release();
-        return order;
-
+        return orderId;
       } catch (error) {
         await connection.rollback();
-        connection.release();
         throw error;
+      } finally {
+        connection.release();
       }
     } catch (error) {
       throw error;
@@ -62,13 +45,24 @@ class OrderModel {
 
   static async getOrderById(orderId) {
     try {
-      const [results] = await db.query(
-        'SELECT o.*, oi.* FROM orders o ' +
-        'LEFT JOIN order_items oi ON o.id = oi.order_id ' +
-        'WHERE o.id = ?',
+      const [order] = await db.query(
+        'SELECT * FROM orders WHERE id = ?',
         [orderId]
       );
-      return results;
+
+      if (order.length === 0) {
+        return null;
+      }
+
+      const [items] = await db.query(
+        'SELECT * FROM order_items WHERE order_id = ?',
+        [orderId]
+      );
+
+      return {
+        ...order[0],
+        items
+      };
     } catch (error) {
       throw error;
     }
@@ -79,8 +73,7 @@ class OrderModel {
       const [results] = await db.query(
         'SELECT o.*, oi.* FROM orders o ' +
         'LEFT JOIN order_items oi ON o.id = oi.order_id ' +
-        'LEFT JOIN user_orders uo ON o.id = uo.order_id ' +
-        'WHERE uo.user_id = ?',
+        'WHERE o.user_id = ?',
         [userId]
       );
       return results;
@@ -89,13 +82,17 @@ class OrderModel {
     }
   }
 
-  static async updateOrderStatus(orderId, isPaid, paidAt, isDelivered, deliveredAt) {
+  static async getSellersOrders(userId) {
     try {
       const [results] = await db.query(
-        'UPDATE orders SET is_paid = ?, paid_at = ?, is_delivered = ?, delivered_at = ? WHERE id = ?',
-        [isPaid, paidAt, isDelivered, deliveredAt, orderId]
+        `SELECT o.*, oi.*
+        FROM orders o
+INNER JOIN order_items oi ON o.id = oi.order_id
+INNER JOIN products p ON oi.product_id = p.id
+WHERE p.seller_id = ?`,
+        [userId]
       );
-      return results.affectedRows > 0;
+      return results;
     } catch (error) {
       throw error;
     }

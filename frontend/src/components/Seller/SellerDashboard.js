@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Toolbar, Drawer, List, ListItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
-import { People, Category, TrendingUp, ExitToApp, Dashboard, LocalShipping, Settings as SettingsIcon } from '@mui/icons-material';
+import { Category, ExitToApp, Dashboard, LocalShipping, Settings as SettingsIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import Products from '../Admin/Products';
 import Orders from '../Admin/Orders';
-import Users from '../Admin/Users';
-import Analytics from '../Admin/Analytics';
+import AdminDashboard from '../Admin/AdminDashboard';
 import Settings from '../Admin/Settings';
 
 const drawerWidth = 240;
@@ -14,7 +13,6 @@ const menuItems = [
   { text: 'Dashboard', icon: <Dashboard />, path: '/admin' },
   { text: 'Products', icon: <Category />, path: '/admin/products' },
   { text: 'Orders', icon: <LocalShipping />, path: '/admin/orders' },
-  { text: 'Users', icon: <People />, path: '/admin/users' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/admin/settings' },
 ];
 
@@ -32,19 +30,15 @@ const SellerDashboard = () => {
   const renderContent = () => {
     switch (selectedMenu) {
       case '/admin':
-        return <Analytics />;
+        return <AdminDashboard />;
       case '/admin/products':
         return <Products />;
       case '/admin/orders':
         return <Orders />;
-      case '/admin/users':
-        return <Users />;
-      case '/admin/analytics':
-        return <Analytics />;
       case '/admin/settings':
         return <Settings />;
       default:
-        return <Analytics />;
+        return <AdminDashboard />;
     }
   };
 

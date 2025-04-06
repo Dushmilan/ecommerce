@@ -9,7 +9,7 @@ exports.addProduct = async (req, res) => {
     const image = req.file ? `${process.env.IMAGE_URL}/${req.file.filename}` : '';
 
     // Get seller ID from JWT token
-    const sellerId = req.user.userId;
+    const sellerId = req.user.id;
     
     if (!sellerId) {
       return res.status(400).json({ message: 'Seller ID is required' });
@@ -38,7 +38,7 @@ exports.addProduct = async (req, res) => {
 // Get all products
 exports.getProducts = async (req, res) => {
   try {
-    const sellerId = req.user.userId;
+    const sellerId = req.user.id;
     
     if (!sellerId) {
       return res.status(400).json({ message: 'Seller ID is required' });
@@ -58,7 +58,7 @@ exports.getProducts = async (req, res) => {
 // Update a product
 exports.updateProduct = async (req, res) => {
   try {
-    const sellerId = req.user.userId;
+    const sellerId = req.user.id;
     const productId = req.body.id;
     
      if (!productId) {

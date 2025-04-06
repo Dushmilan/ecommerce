@@ -180,7 +180,6 @@ const Products = () => {
       if (editImageFile) {
         formData.append('image', editImageFile);
       }
-      console.log(formData);
 
       const response = await fetch(`http://localhost:5000/api/updateproducts`, {
         method: 'PUT',
@@ -223,7 +222,6 @@ const Products = () => {
   const handleDeleteProduct = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      console.log(id);
       if (!token) {
         throw new Error('Not authenticated');
       }
